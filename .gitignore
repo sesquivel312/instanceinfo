@@ -4,6 +4,9 @@
 *.png
 *.svg
 
+# ignore CSV files for now, lest they contain anything not for public
+*.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
