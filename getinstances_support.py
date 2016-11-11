@@ -1,5 +1,3 @@
-import boto3
-
 def get_unique_image_ids(instances):
 
     unique_images = set([])
@@ -10,6 +8,12 @@ def get_unique_image_ids(instances):
     return unique_images
 
 def compile_image_data(instances, ec2_resource):
+    """
+    returns a dict of dicts, top level are the image id's, with attached image attributes
+    :param instances: aws ec2 instance iterable
+    :param ec2_resource: boto3 ec2 resource object
+    :return: dict-of-dicts containing image attributes
+    """
 
     img_set = get_unique_image_ids(instances)
 
@@ -18,7 +22,7 @@ def compile_image_data(instances, ec2_resource):
     for img in img_set:
 
         temp = ec2_resource.Image(img)
-        try:
+        try:  # sometimes getting the attributes from the image object fails, if so, fill w/dummy values indicating that
             arch = temp.architecture
             img_type = temp.image_type
             desc = temp.description
