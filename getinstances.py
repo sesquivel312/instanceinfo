@@ -21,4 +21,5 @@ instances = ec2_resource.instances.all()
 # build a dict of interesting image attributes
 img_data_dict = support.compile_image_data(instances, ec2_resource)
 
+#create the output csv file
 support.create_instance_csv_file(instances, img_data_dict, args.output)
