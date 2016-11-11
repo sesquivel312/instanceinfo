@@ -53,8 +53,8 @@ def create_instance_csv_file(instances, img_data_dict, csv_file_path):
     csvwriter = csv.writer(f)
 
     # write the header row
-    csvwriter.writerow(('instance_id', 'private_dns_name', 'private_ip', 'image_id', 'architecture', 'image_type',
-                        'description', 'platform', 'tags'))
+    csvwriter.writerow(('instance_id', 'private_dns_name', 'private_ip', 'instance_name','instance_tags','image_id', 'architecture',
+                        'image_type', 'description', 'platform', 'image_tags'))
 
     for instance in instances:
 
@@ -62,10 +62,12 @@ def create_instance_csv_file(instances, img_data_dict, csv_file_path):
         inst_id = instance.id
         priv_dns = instance.private_dns_name
         priv_ip = instance.private_ip_address
+        inst_name = [dict['Value'] for dict in instance.tags if dict['Key'] == 'Name'].pop()
+        inst_tags = [dict.items() for dict in instance.tags if dict['Key'] != 'Name']
 
         # get the image attributes associated w/the instance, via the image_id
         if instance.image_id not in img_data_dict:  # if problem getting img attrs for img_id, set values to indicate so
-            img_id = arch = img_type = desc = platform = tags = 'not found'
+            img_id = arch = img_type = desc = platform = img_tags = 'not found'
         else:  #
             img_id = instance.image_id
             img_attr = img_data_dict [img_id]
@@ -73,25 +75,11 @@ def create_instance_csv_file(instances, img_data_dict, csv_file_path):
             img_type = img_attr['img_type']
             desc = img_attr['desc']
             platform = img_attr['platform']
-            tags = img_attr['tags']
+            img_tags = img_attr['tags']
 
-        row = [inst_id, priv_dns, priv_ip, img_id, arch, img_type, desc, platform, tags]
+        row = [inst_id, priv_dns, priv_ip, inst_name, inst_tags, img_id, arch, img_type, desc, platform, img_tags]
 
         csvwriter.writerow(row)
 
     f.flush()
     f.close()
-
-
-
-
-
-
-# create a CSV to hold data
-csvfile = open(csvfilepath, 'w')
-csvwriter = csv.writer(csvfile)
-csvwriter.writerow(csvheaders)
-csvwriter.writerow((image, arch, img_type, desc, platform, tags))
-
-csvfile.flush()
-csvfile.close()
