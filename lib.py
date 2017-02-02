@@ -1,5 +1,14 @@
 import csv
+import argparse
 
+
+def get_cli_args():
+    parser = argparse.ArgumentParser(description='Collect basic data about AWS instances and its associated image')
+    parser.add_argument('-p', '--profile', help='aws config profile to use, defaults to \'\'', default='')
+    parser.add_argument('-r', '--region', help='aws region to use, defaults to us-west-2', default='us-west-2')
+    parser.add_argument('-o', '--output', help='relative or fully qualified path to output file, defaults to ' \
+                                               'instanceinfo.csv in the current directory', default='instanceinfo.csv')
+    return parser.parse_args()
 
 def get_unique_image_ids(instances):
 

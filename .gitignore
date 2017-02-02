@@ -3,6 +3,7 @@
 *.gexf
 *.png
 *.svg
+*.bkp
 
 # ignore CSV files for now, lest they contain anything not for public
 *.csv
