@@ -62,17 +62,45 @@ def create_instance_csv_file(instances, img_data_dict, csv_file_path):
     csvwriter = csv.writer(f)
 
     # write the header row
-    csvwriter.writerow(('instance_id', 'private_dns_name', 'private_ip', 'instance_name','instance_tags','image_id', 'architecture',
-                        'image_type', 'description', 'platform', 'image_tags'))
+    csvwriter.writerow(('instance_id', 'instance_state', 'private_dns_name', 'private_ip', 'instance_name',
+                        'instance_tags','image_id', 'architecture',
+                        'image_type', 'description', 'platform', 'image_tags', 'public_dns',
+                        'public_ip', 'network_info'))
 
     for instance in instances:
 
         # get the instance attributes we care about
-        inst_id = instance.id
+        instance_id = instance.id
+        instance_state = instance.state['Name']
         priv_dns = instance.private_dns_name
         priv_ip = instance.private_ip_address
+        public_dns = instance.public_dns_name
+        public_ip = instance.public_ip_address
         inst_name = [dict['Value'] for dict in instance.tags if dict['Key'] == 'Name'].pop()
         inst_tags = [dict.items() for dict in instance.tags if dict['Key'] != 'Name']
+
+        # todo parse relevant info from network_info, aggregate into a single field in the output csv
+
+        network_info = ''
+
+        for iface in instance.network_interfaces_attribute:
+            network_info += '<{}>'.format(iface['MacAddress'])
+            private_ips = iface.get('PrivateIpAddresses')
+            if private_ips:
+                for address in private_ips:
+
+                    network_info += address['PrivateIpAddress']
+
+                    if address['Primary']:
+                        network_info += '(P);'
+                    else:
+                        network_info += ';'
+
+                    association = address.get('Association')
+
+                    if association:
+                        network_info += '{};'.format(association['PublicIp'])
+
 
         # get the image attributes associated w/the instance, via the image_id
         if instance.image_id not in img_data_dict:  # if problem getting img attrs for img_id, set values to indicate so
@@ -86,7 +114,8 @@ def create_instance_csv_file(instances, img_data_dict, csv_file_path):
             platform = img_attr['platform']
             img_tags = img_attr['tags']
 
-        row = [inst_id, priv_dns, priv_ip, inst_name, inst_tags, img_id, arch, img_type, desc, platform, img_tags]
+        row = [instance_id, instance_state, priv_dns, priv_ip, inst_name, inst_tags, img_id, arch,
+               img_type, desc, platform, img_tags, public_dns, public_ip, network_info]
 
         csvwriter.writerow(row)
 
