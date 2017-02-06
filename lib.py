@@ -52,6 +52,54 @@ def compile_image_data(instances, ec2_resource):
     return img_data_dict
 
 
+def get_network_info(instance):
+
+    """
+    helper to collect all interface & address info into a single string, per instance
+
+    ipv4 only
+
+    string is formatted:
+
+    <mac1>_ip_[(P)];...;_ip_[(P}];<mac1>_ip_[(P)];...;_ip_[(P}]...
+
+    e.g.:
+
+    <06:10:ca:30:81:af>172.31.76.222(P);172.31.65.237;<06:5f:f9:71:73:7b>172.31.67.31(P);172.31.74.102;
+
+    (P) after an address indicates it has the primary flag set in AWS config
+
+    :param instance: boto3.ec2 Instance object
+    :return: network_info (string)
+    """
+
+    network_info = ''
+
+    for iface in instance.network_interfaces_attribute:
+
+        network_info += '<{}>'.format(iface['MacAddress'])
+
+        private_ips = iface.get('PrivateIpAddresses')
+
+        if private_ips:
+
+            for address in private_ips:
+
+                network_info += address['PrivateIpAddress']
+
+                if address['Primary']:
+                    network_info += '(P);'
+                else:
+                    network_info += ';'
+
+                association = address.get('Association')
+
+                if association:
+                    network_info += '{};'.format(association['PublicIp'])
+
+    return network_info
+
+
 def create_instance_csv_file(instances, img_data_dict, csv_file_path):
 
     # todo: for each instance create a CSV row of interesting information
@@ -79,28 +127,7 @@ def create_instance_csv_file(instances, img_data_dict, csv_file_path):
         inst_name = [dict['Value'] for dict in instance.tags if dict['Key'] == 'Name'].pop()
         inst_tags = [dict.items() for dict in instance.tags if dict['Key'] != 'Name']
 
-        # todo parse relevant info from network_info, aggregate into a single field in the output csv
-
-        network_info = ''
-
-        for iface in instance.network_interfaces_attribute:
-            network_info += '<{}>'.format(iface['MacAddress'])
-            private_ips = iface.get('PrivateIpAddresses')
-            if private_ips:
-                for address in private_ips:
-
-                    network_info += address['PrivateIpAddress']
-
-                    if address['Primary']:
-                        network_info += '(P);'
-                    else:
-                        network_info += ';'
-
-                    association = address.get('Association')
-
-                    if association:
-                        network_info += '{};'.format(association['PublicIp'])
-
+        network_info = get_network_info(instance)
 
         # get the image attributes associated w/the instance, via the image_id
         if instance.image_id not in img_data_dict:  # if problem getting img attrs for img_id, set values to indicate so
